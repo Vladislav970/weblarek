@@ -1,20 +1,9 @@
 import { IBuyer, ValidationErrors } from "../../types";
 import { IEvents } from "../base/Events";
-/**
- * Модель для работы с данными покупателя
- * Отвечает за хранение и валидацию данных заказа
- * @emits 'customer:changed' при изменении данных покупателя
- */
+
 export class BuyerModel {
   private data: Partial<IBuyer> = {};
 
-  /**
-   * Создает экземпляр модели покупателя
-   * @param initialData - начальные данные покупателя (опционально)
-   * Можно передать часть полей, остальные будут не заполнены
-   * @example
-   * new CustomerModel({ email: 'test@mail.ru', phone: '+79991234567' })
-   */
   constructor(private events: IEvents, initialData?: Partial<IBuyer>) {
     if (initialData) {
       this.data = { ...initialData };
@@ -33,11 +22,6 @@ export class BuyerModel {
     return { ...this.data };
   }
 
-  /**
-   * Валидирует данные покупателя
-   * @returns объект с ошибками валидации
-   * Если поле валидно, оно отсутствует в объекте
-   */
   validate(): ValidationErrors {
     const errors: ValidationErrors = {};
 

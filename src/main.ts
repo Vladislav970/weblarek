@@ -8,7 +8,6 @@ import { BuyerModel } from "./components/models/BuyerModel";
 import { API_URL } from "./utils/constants";
 import { IProductListResponse, TPayment, IProduct } from "./types";
 
-// Импорты представлений
 import {
   Header,
   Gallery,
@@ -22,28 +21,22 @@ import {
   Success,
 } from "./components/views";
 
-// Утилиты
 import { cloneTemplate, ensureElement } from "./utils/utils";
 
-// ==================== ИНИЦИАЛИЗАЦИЯ ====================
 const events = new EventEmitter();
 
-// Модели
 const api = new Api(API_URL);
 const apiService = new ApiService(api, events);
 const productsModel = new ProductsModel(events);
 const cartModel = new CartModel(events);
 const buyerModel = new BuyerModel(events);
 
-// DOM элементы
 const modalContainer = ensureElement<HTMLElement>("#modal-container");
 
-// Основные компоненты
 const header = new Header(events, ensureElement<HTMLElement>(".header"));
 const gallery = new Gallery(events, ensureElement<HTMLElement>(".gallery"));
 const modal = new Modal(events, modalContainer);
 
-// Шаблоны
 const cardCatalogTemplate = ensureElement<HTMLTemplateElement>("#card-catalog");
 const cardPreviewTemplate = ensureElement<HTMLTemplateElement>("#card-preview");
 const cardBasketTemplate = ensureElement<HTMLTemplateElement>("#card-basket");
@@ -52,15 +45,11 @@ const orderTemplate = ensureElement<HTMLTemplateElement>("#order");
 const contactsTemplate = ensureElement<HTMLTemplateElement>("#contacts");
 const successTemplate = ensureElement<HTMLTemplateElement>("#success");
 
-// Вспомогательные компоненты
 const basket = new Basket(events, cloneTemplate(basketTemplate));
 const orderForm = new OrderForm(events, cloneTemplate(orderTemplate));
 const contactsForm = new ContactsForm(events, cloneTemplate(contactsTemplate));
 const success = new Success(events, cloneTemplate(successTemplate));
 
-// ==================== ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ====================
-
-/** Создает карточку товара для каталога */
 const createCatalogCard = (product: IProduct) => {
   const card = new CardCatalog(cloneTemplate(cardCatalogTemplate), {
     onClick: () => events.emit("card:select", { id: product.id }),
@@ -72,7 +61,6 @@ const createCatalogCard = (product: IProduct) => {
   return card.render();
 };
 
-/** Создает карточку товара для корзины */
 const createBasketCard = (item: IProduct, index: number) => {
   const card = new CardBasket(cloneTemplate(cardBasketTemplate), {
     onDelete: () => events.emit("product:remove", { id: item.id }),
@@ -83,7 +71,6 @@ const createBasketCard = (item: IProduct, index: number) => {
   return card.render();
 };
 
-/** Отправляет заказ на сервер */
 const submitOrder = async () => {
   try {
     const customerData = buyerModel.getData();
@@ -101,7 +88,6 @@ const submitOrder = async () => {
     console.log("Sending order:", orderData);
     await apiService.submitOrder(orderData);
 
-    // Успешное оформление
     showOrderSuccess(orderData.total);
   } catch (error) {
     console.error("Ошибка оформления заказа:", error);
@@ -109,17 +95,14 @@ const submitOrder = async () => {
   }
 };
 
-/** Показывает экран успешного заказа */
 const showOrderSuccess = (total: number) => {
   success.total = total;
   modal.content = success.render();
 
-  // Очищаем данные
   cartModel.clear();
   buyerModel.clear();
 };
 
-/** Открывает форму заказа */
 const openOrderForm = () => {
   modal.content = orderForm.render();
   modal.open();
@@ -129,14 +112,10 @@ const openOrderForm = () => {
   orderForm.address = customerData.address || "";
 };
 
-// ИНИЦИАЛИЗИРУЕМ НАЧАЛЬНОЕ СОСТОЯНИЕ КОРЗИНЫ
 basket.empty = cartModel.getTotalCount() === 0;
 basket.total = 0;
 basket.items = [];
 
-// ==================== ОБРАБОТЧИКИ СОБЫТИЙ ====================
-
-// --- КАТАЛОГ И КАРТОЧКИ ---
 events.on("catalog:changed", () => {
   const products = productsModel.getItems();
   const cards = products.map(createCatalogCard);
@@ -176,7 +155,6 @@ events.on("product:selected", () => {
   }
 });
 
-// --- КОРЗИНА ---
 events.on("cart:changed", () => {
   const itemCount = cartModel.getTotalCount();
 
@@ -233,7 +211,6 @@ events.on("customer:changed", () => {
   const errors = buyerModel.validate();
   const customerData = buyerModel.getData();
 
-  // ПОЛНОЕ ОБНОВЛЕНИЕ OrderForm
   orderForm.payment = customerData.payment || "";
   orderForm.address = customerData.address || "";
   orderForm.valid = !(errors.payment || errors.address);
@@ -241,14 +218,12 @@ events.on("customer:changed", () => {
     Boolean
   ) as string[];
 
-  // ПОЛНОЕ ОБНОВЛЕНИЕ ContactsForm
   contactsForm.email = customerData.email || "";
   contactsForm.phone = customerData.phone || "";
   contactsForm.valid = Object.keys(errors).length === 0;
   contactsForm.errors = Object.values(errors).filter(Boolean) as string[];
 });
 
-// ==================== ЗАГРУЗКА ДАННЫХ ====================
 apiService
   .getProductList()
   .then((response: IProductListResponse) => {

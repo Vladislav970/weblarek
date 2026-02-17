@@ -1,10 +1,5 @@
 import { IProduct } from "../../types";
 import { IEvents } from "../base/Events";
-/**
- * Модель для работы с корзиной
- * Отвечает за хранение и управление товарами в корзине
- * @emits 'cart:changed' при любом изменении состава корзины
- */
 
 export class CartModel {
   private items: IProduct[] = [];
@@ -15,11 +10,6 @@ export class CartModel {
     return [...this.items];
   }
 
-  /**
-   * Предполагается, что UI не позволит добавить товар, уже находящийся в корзине,
-   * и удалить товар, которого нет в корзине. Но на всякий случай я добавлю защиту
-   * на случай нарушения этого предположения
-   */
   contains(itemId: string): boolean {
     return this.items.some((item) => item.id === itemId);
   }
