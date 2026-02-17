@@ -1,7 +1,6 @@
+﻿import { CDN_URL, categoryMap } from "../../utils/constants";
 import { ensureElement } from "../../utils/utils";
 import { Card } from "./Card";
-import { CDN_URL } from "../../utils/constants";
-import { categoryMap } from "../../utils/constants";
 
 interface ICardCatalogData {
   image: string;
@@ -11,43 +10,30 @@ interface ICardCatalogData {
 }
 
 interface ICardCatalogActions {
-  onClick: (event: MouseEvent) => void;
+  onClick?: (event: MouseEvent) => void;
 }
 
 export class CardCatalog extends Card<ICardCatalogData> {
-  protected imageElement: HTMLImageElement;
-  protected categoryElement: HTMLElement;
-  protected button: HTMLButtonElement;
+  private readonly imageNode: HTMLImageElement;
+  private readonly categoryNode: HTMLElement;
 
   constructor(container: HTMLElement, actions?: ICardCatalogActions) {
     super(container, actions);
 
-    this.categoryElement = ensureElement<HTMLElement>(
-      ".card__category",
-      this.container
-    );
-    this.imageElement = ensureElement<HTMLImageElement>(
-      ".card__image",
-      this.container
-    );
-    this.button = this.container as HTMLButtonElement;
+    this.imageNode = ensureElement<HTMLImageElement>(".card__image", this.container);
+    this.categoryNode = ensureElement<HTMLElement>(".card__category", this.container);
+  }
+
+  set image(path: string) {
+    this.setImage(this.imageNode, `${CDN_URL}${path}`, this.title);
   }
 
   set category(value: string) {
-    this.categoryElement.textContent = value;
+    this.setText(this.categoryNode, value);
 
-    for (const key in categoryMap) {
-      const shouldHaveClass = key === value;
-      this.categoryElement.classList.toggle(
-        categoryMap[key as keyof typeof categoryMap],
-        shouldHaveClass
-      );
-    }
-  }
-
-  set image(value: string) {
-    const fullImagePath = CDN_URL + value;
-    this.setImage(this.imageElement, fullImagePath, this.title);
+    Object.entries(categoryMap).forEach(([name, className]) => {
+      this.categoryNode.classList.toggle(className, value === name);
+    });
   }
 
   set id(value: string) {

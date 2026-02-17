@@ -1,29 +1,22 @@
-import { ensureElement } from "../../utils/utils";
+﻿import { ensureElement } from "../../utils/utils";
 import { Component } from "../base/Component";
 import { IEvents } from "../base/Events";
 
-interface IModal {
-  content: HTMLElement; // Содержимое, которое будет отображено внутри модального окна.
+interface IModalData {
+  content: HTMLElement;
 }
 
-export class Modal extends Component<IModal> {
-  protected modalCloseBtn: HTMLButtonElement;
-  protected modalContent: HTMLElement;
+export class Modal extends Component<IModalData> {
+  private readonly closeButton: HTMLButtonElement;
+  private readonly contentNode: HTMLElement;
 
-  constructor(protected events: IEvents, container: HTMLElement) {
+  constructor(private readonly events: IEvents, container: HTMLElement) {
     super(container);
 
-    this.modalCloseBtn = ensureElement<HTMLButtonElement>(
-      ".modal__close",
-      this.container
-    );
-    this.modalContent = ensureElement<HTMLElement>(
-      ".modal__content",
-      this.container
-    );
+    this.closeButton = ensureElement<HTMLButtonElement>(".modal__close", this.container);
+    this.contentNode = ensureElement<HTMLElement>(".modal__content", this.container);
 
-    this.modalCloseBtn.addEventListener("click", () => this.close());
-
+    this.closeButton.addEventListener("click", () => this.close());
     this.container.addEventListener("click", (event) => {
       if (event.target === this.container) {
         this.close();
@@ -31,15 +24,17 @@ export class Modal extends Component<IModal> {
     });
   }
 
-  set content(content: HTMLElement) {
-    this.modalContent.replaceChildren(content);
+  set content(value: HTMLElement) {
+    this.contentNode.replaceChildren(value);
   }
 
   open(): void {
     this.container.classList.add("modal_active");
+    this.events.emit("modal:opened");
   }
 
   close(): void {
     this.container.classList.remove("modal_active");
+    this.events.emit("modal:closed");
   }
 }

@@ -1,42 +1,38 @@
-// Card.ts
+﻿import { Component } from "../base/Component";
 import { ensureElement } from "../../utils/utils";
-import { Component } from "../base/Component";
 
 export interface ICardActions {
   onClick?: (event: MouseEvent) => void;
 }
 
-export class Card<T> extends Component<T> {
-  protected _title?: HTMLElement;
-  protected _price?: HTMLElement;
-  protected _button?: HTMLButtonElement;
+export class Card<TState> extends Component<TState> {
+  protected titleNode: HTMLElement;
+  protected priceNode: HTMLElement;
+  protected actionButton?: HTMLButtonElement;
 
-  constructor(protected container: HTMLElement, actions?: ICardActions) {
+  constructor(container: HTMLElement, actions?: ICardActions) {
     super(container);
 
-    this._title = ensureElement<HTMLElement>(".card__title", this.container);
-    this._price = ensureElement<HTMLElement>(".card__price", this.container);
-
-    this._button = this.container.querySelector("button") || undefined;
+    this.titleNode = ensureElement<HTMLElement>(".card__title", this.container);
+    this.priceNode = ensureElement<HTMLElement>(".card__price", this.container);
+    this.actionButton =
+      this.container.querySelector<HTMLButtonElement>("button") ?? undefined;
 
     if (actions?.onClick) {
-      if (this._button) {
-        this._button.addEventListener("click", actions.onClick);
-      } else {
-        this.container.addEventListener("click", actions.onClick);
-      }
+      (this.actionButton ?? this.container).addEventListener("click", actions.onClick);
     }
   }
 
   set title(value: string) {
-    if (this._title) {
-      this._title.textContent = value;
-    }
+    this.setText(this.titleNode, value);
+  }
+
+  get title(): string {
+    return this.titleNode.textContent ?? "";
   }
 
   set price(value: number | null) {
-    if (this._price) {
-      this._price.textContent = value ? `${value} синапсов` : "Бесценно";
-    }
+    const text = value === null ? "Бесценно" : `${value} синапсов`;
+    this.setText(this.priceNode, text);
   }
 }

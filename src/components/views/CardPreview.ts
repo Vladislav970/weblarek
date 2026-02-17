@@ -1,6 +1,6 @@
+﻿import { CDN_URL, categoryMap } from "../../utils/constants";
 import { ensureElement } from "../../utils/utils";
 import { Card, ICardActions } from "./Card";
-import { CDN_URL, categoryMap } from "../../utils/constants";
 
 interface ICardPreviewData {
   id: string;
@@ -12,61 +12,45 @@ interface ICardPreviewData {
 }
 
 export class CardPreview extends Card<ICardPreviewData> {
-  protected imageElement: HTMLImageElement;
-  protected categoryElement: HTMLElement;
-  protected descriptionElement: HTMLElement;
-  protected button: HTMLButtonElement;
+  private readonly imageNode: HTMLImageElement;
+  private readonly categoryNode: HTMLElement;
+  private readonly descriptionNode: HTMLElement;
+  private readonly buyButton: HTMLButtonElement;
 
   constructor(container: HTMLElement, actions?: ICardActions) {
     super(container, actions);
 
-    this.imageElement = ensureElement<HTMLImageElement>(
-      ".card__image",
-      this.container
-    );
-    this.categoryElement = ensureElement<HTMLElement>(
-      ".card__category",
-      this.container
-    );
-    this.descriptionElement = ensureElement<HTMLElement>(
-      ".card__text",
-      this.container
-    );
-    this.button = ensureElement<HTMLButtonElement>(
-      ".card__button",
-      this.container
-    );
-  }
-
-  set image(value: string) {
-    const fullImagePath = CDN_URL + value;
-    this.setImage(this.imageElement, fullImagePath, this.title);
-  }
-
-  set category(value: string) {
-    this.categoryElement.textContent = value;
-    for (const key in categoryMap) {
-      const shouldHaveClass = key === value;
-      this.categoryElement.classList.toggle(
-        categoryMap[key as keyof typeof categoryMap],
-        shouldHaveClass
-      );
-    }
-  }
-
-  set description(value: string) {
-    this.descriptionElement.textContent = value;
+    this.imageNode = ensureElement<HTMLImageElement>(".card__image", this.container);
+    this.categoryNode = ensureElement<HTMLElement>(".card__category", this.container);
+    this.descriptionNode = ensureElement<HTMLElement>(".card__text", this.container);
+    this.buyButton = ensureElement<HTMLButtonElement>(".card__button", this.container);
   }
 
   set id(value: string) {
     this.container.dataset.id = value;
   }
 
+  set image(path: string) {
+    this.setImage(this.imageNode, `${CDN_URL}${path}`, this.title);
+  }
+
+  set category(value: string) {
+    this.setText(this.categoryNode, value);
+
+    Object.entries(categoryMap).forEach(([name, className]) => {
+      this.categoryNode.classList.toggle(className, value === name);
+    });
+  }
+
+  set description(value: string) {
+    this.setText(this.descriptionNode, value);
+  }
+
   set buttonText(value: string) {
-    this.button.textContent = value;
+    this.setText(this.buyButton, value);
   }
 
   set disabled(value: boolean) {
-    this.button.disabled = value;
+    this.buyButton.disabled = value;
   }
 }

@@ -1,51 +1,53 @@
-import { IBuyer, ValidationErrors } from "../../types";
+﻿import { IBuyer, ValidationErrors } from "../../types";
 import { IEvents } from "../base/Events";
 
-export class BuyerModel {
-  private data: Partial<IBuyer> = {};
+const ERROR_TEXT = {
+  payment: "Выберите способ оплаты",
+  address: "Укажите адрес доставки",
+  phone: "Укажите телефон",
+  email: "Укажите email",
+} as const;
 
-  constructor(private events: IEvents, initialData?: Partial<IBuyer>) {
-    if (initialData) {
-      this.data = { ...initialData };
-    }
+export class BuyerModel {
+  private state: Partial<IBuyer>;
+
+  constructor(private readonly events: IEvents, initial: Partial<IBuyer> = {}) {
+    this.state = { ...initial };
   }
 
   setData(data: Partial<IBuyer>): void {
-    if (!data || typeof data !== "object") {
-      throw new Error("Не объект");
-    }
-    this.data = { ...this.data, ...data };
+    this.state = { ...this.state, ...data };
     this.events.emit("customer:changed");
   }
 
   getData(): Partial<IBuyer> {
-    return { ...this.data };
+    return { ...this.state };
   }
 
   validate(): ValidationErrors {
     const errors: ValidationErrors = {};
 
-    if (!this.data.payment) {
-      errors.payment = "Не выбран вид оплаты";
+    if (!this.state.payment) {
+      errors.payment = ERROR_TEXT.payment;
     }
 
-    if (!this.data.address) {
-      errors.address = "Укажите адрес";
+    if (!this.state.address?.trim()) {
+      errors.address = ERROR_TEXT.address;
     }
 
-    if (!this.data.phone) {
-      errors.phone = "Укажите телефон";
+    if (!this.state.phone?.trim()) {
+      errors.phone = ERROR_TEXT.phone;
     }
 
-    if (!this.data.email) {
-      errors.email = "Укажите email";
+    if (!this.state.email?.trim()) {
+      errors.email = ERROR_TEXT.email;
     }
 
     return errors;
   }
 
   clear(): void {
-    this.data = {};
+    this.state = {};
     this.events.emit("customer:changed");
   }
 }

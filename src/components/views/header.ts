@@ -1,32 +1,25 @@
-import { ensureElement } from "../../utils/utils";
+﻿import { ensureElement } from "../../utils/utils";
 import { Component } from "../base/Component";
 import { IEvents } from "../base/Events";
 
-interface IHeader {
+interface IHeaderData {
   counter: number;
 }
 
-export class Header extends Component<IHeader> {
-  protected counterElement: HTMLElement;
-  protected basketButton: HTMLButtonElement;
+export class Header extends Component<IHeaderData> {
+  private readonly counterNode: HTMLElement;
+  private readonly basketButton: HTMLButtonElement;
 
-  constructor(protected events: IEvents, container: HTMLElement) {
+  constructor(private readonly events: IEvents, container: HTMLElement) {
     super(container);
 
-    this.counterElement = ensureElement<HTMLElement>(
-      ".header__basket-counter",
-      this.container
-    );
-    this.basketButton = ensureElement<HTMLButtonElement>(
-      ".header__basket",
-      this.container
-    );
-    this.basketButton.addEventListener("click", () => {
-      this.events.emit("basket:open");
-    });
+    this.counterNode = ensureElement<HTMLElement>(".header__basket-counter", this.container);
+    this.basketButton = ensureElement<HTMLButtonElement>(".header__basket", this.container);
+
+    this.basketButton.addEventListener("click", () => this.events.emit("basket:open"));
   }
 
   set counter(value: number) {
-    this.counterElement.textContent = String(value);
+    this.setText(this.counterNode, String(value));
   }
 }

@@ -1,65 +1,53 @@
-import { IProduct } from "../../types";
+﻿import { IProduct } from "../../types";
 import { IEvents } from "../base/Events";
 
 export class CartModel {
-  private items: IProduct[] = [];
+  private items = new Map<string, IProduct>();
 
-  constructor(private events: IEvents) {}
+  constructor(private readonly events: IEvents) {}
 
   getItems(): IProduct[] {
-    return [...this.items];
+    return Array.from(this.items.values()).map((item) => ({ ...item }));
   }
 
-  contains(itemId: string): boolean {
-    return this.items.some((item) => item.id === itemId);
+  contains(productId: string): boolean {
+    return this.items.has(productId);
   }
 
-  addItem(item: IProduct): void {
-    if (!item || typeof item !== "object") {
-      throw new Error("Не валидный продукт");
-    }
-    if (!item.id || typeof item.id !== "string") {
-      throw new Error("Не валидный ID");
+  addItem(product: IProduct): void {
+    if (!product?.id) {
+      throw new Error("CartModel.addItem expects product with id");
     }
 
-    if (item.price === null) {
-      throw new Error("Товар бесценный)");
-    }
-
-    if (this.contains(item.id)) {
-      console.warn("Товар уже находится в корзине");
-      return;
-    }
-    this.items.push({ ...item });
-    this.events.emit('cart:changed');
-  }
-
-  removeItem(itemId: string): void {
-    if (!itemId || typeof itemId !== "string") {
-      throw new Error("Не валидный ID");
-    }
-
-    if (!this.contains(itemId)) {
-      console.warn("Товар не найден в корзине");
+    if (product.price === null || this.items.has(product.id)) {
       return;
     }
 
-    this.items = this.items.filter((item) => item.id !== itemId);
-    this.events.emit('cart:changed');
+    this.items.set(product.id, { ...product });
+    this.events.emit("cart:changed");
   }
 
-  getTotalCount(): number {
-    return this.items.length;
-  }
-
-  getTotalPrice(): number {
-    return this.items.reduce((total, item) => {
-      return total + (item.price || 0);
-    }, 0);
+  removeItem(productId: string): void {
+    const deleted = this.items.delete(productId);
+    if (deleted) {
+      this.events.emit("cart:changed");
+    }
   }
 
   clear(): void {
-    this.items = [];
-    this.events.emit('cart:changed');
+    if (this.items.size === 0) {
+      return;
+    }
+
+    this.items.clear();
+    this.events.emit("cart:changed");
+  }
+
+  getTotalCount(): number {
+    return this.items.size;
+  }
+
+  getTotalPrice(): number {
+    return this.getItems().reduce((sum, item) => sum + (item.price ?? 0), 0);
   }
 }

@@ -1,4 +1,4 @@
-import { ensureElement } from "../../utils/utils";
+﻿import { ensureElement } from "../../utils/utils";
 import { Component } from "../base/Component";
 import { IEvents } from "../base/Events";
 
@@ -7,13 +7,13 @@ interface ISuccessData {
 }
 
 export class Success extends Component<ISuccessData> {
-  protected descriptionElement: HTMLElement;
-  protected closeButton: HTMLButtonElement;
+  private readonly descriptionNode: HTMLElement;
+  private readonly closeButton: HTMLButtonElement;
 
-  constructor(protected events: IEvents, container: HTMLElement) {
+  constructor(private readonly events: IEvents, container: HTMLElement) {
     super(container);
 
-    this.descriptionElement = ensureElement<HTMLElement>(
+    this.descriptionNode = ensureElement<HTMLElement>(
       ".order-success__description",
       this.container
     );
@@ -21,12 +21,13 @@ export class Success extends Component<ISuccessData> {
       ".order-success__close",
       this.container
     );
+
     this.closeButton.addEventListener("click", () => {
       this.events.emit("success:close");
     });
   }
 
   set total(value: number) {
-    this.descriptionElement.textContent = `Списано ${value} синапсов`;
+    this.setText(this.descriptionNode, `Списано ${value} синапсов`);
   }
 }

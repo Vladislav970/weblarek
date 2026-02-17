@@ -1,53 +1,47 @@
-import { IProduct } from "../../types";
+﻿import { IProduct } from "../../types";
 import { IEvents } from "../base/Events";
 
 export class ProductsModel {
-  private items: IProduct[] = [];
-  private selectedItem: IProduct | undefined;
+  private catalog: IProduct[] = [];
+  private selectedId: string | null = null;
 
-   constructor(private events: IEvents, initialItems: IProduct[] = []) {
-    this.items = initialItems;
+  constructor(private readonly events: IEvents, initial: IProduct[] = []) {
+    this.catalog = [...initial];
   }
 
   setItems(items: IProduct[]): void {
     if (!Array.isArray(items)) {
-      throw new Error("Не массив");
+      throw new Error("ProductsModel.setItems expects an array");
     }
 
-    this.items = [...items];
-    this.selectedItem = undefined;
-    this.events.emit('catalog:changed');
+    this.catalog = items.map((item) => ({ ...item }));
+    this.selectedId = null;
+    this.events.emit("catalog:changed");
   }
 
   getItems(): IProduct[] {
-    return [...this.items];
+    return this.catalog.map((item) => ({ ...item }));
   }
 
   getProductById(id: string): IProduct | undefined {
-    if (!id || typeof id !== "string") {
-      throw new Error("ID товара неккоректно, либо оно отстутсвует");
+    if (!id) {
+      return undefined;
     }
 
-    const product = this.items.find((item) => item.id === id);
+    const found = this.catalog.find((item) => item.id === id);
+    return found ? { ...found } : undefined;
+  }
 
-    return product ? { ...product } : undefined;
+  setSelectedItem(product: IProduct | null): void {
+    this.selectedId = product?.id ?? null;
+    this.events.emit("product:selected", { id: this.selectedId });
   }
 
   getSelectedItem(): IProduct | undefined {
-    return this.selectedItem ? { ...this.selectedItem } : undefined;
-  }
-
-  setSelectedItem(item: IProduct | null): void {
-    if (item === null) {
-      this.selectedItem = undefined;
-      return;
+    if (!this.selectedId) {
+      return undefined;
     }
 
-    if (!item || typeof item !== "object") {
-      throw new Error("Не валидный обьект");
-    }
-
-    this.selectedItem = { ...item };
-    this.events.emit('product:selected');
+    return this.getProductById(this.selectedId);
   }
 }
