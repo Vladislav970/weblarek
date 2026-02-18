@@ -19,25 +19,119 @@ import {
   Success,
 } from "./components/views";
 import {
+  IBuyer,
   IOrderData,
   IProduct,
-  IProductListResponse,
-  TPayment,
   ValidationErrors,
 } from "./types";
 import { API_URL } from "./utils/constants";
+import { apiProducts } from "./utils/data";
 import { cloneTemplate, ensureElement } from "./utils/utils";
 
 type ProductIdPayload = { id: string };
 type FormInputPayload = { field: string; value: string };
 
+function runModelsTests(): void {
+  const testProducts: IProduct[] = apiProducts.items;
+  const firstProduct = testProducts[0];
+  const secondProduct = testProducts[1];
+  const unavailableProduct = testProducts.find((item) => item.price === null);
+
+  const productsModel = new ProductsModel();
+  productsModel.setItems(testProducts);
+  console.log("[TEST][ProductsModel] Массив товаров:", productsModel.getItems());
+
+  if (firstProduct) {
+    console.log(
+      "[TEST][ProductsModel] Товар по id:",
+      productsModel.getProductById(firstProduct.id)
+    );
+    productsModel.setSelectedItem(firstProduct);
+    console.log(
+      "[TEST][ProductsModel] Выбранный товар:",
+      productsModel.getSelectedItem()
+    );
+  }
+
+  productsModel.setSelectedItem(null);
+  console.log(
+    "[TEST][ProductsModel] Выбранный товар после сброса:",
+    productsModel.getSelectedItem()
+  );
+
+  const cartModel = new CartModel();
+  console.log("[TEST][CartModel] Пустая корзина:", cartModel.getItems());
+
+  if (firstProduct) {
+    cartModel.addItem(firstProduct);
+  }
+
+  if (secondProduct) {
+    cartModel.addItem(secondProduct);
+  }
+
+  if (unavailableProduct) {
+    cartModel.addItem(unavailableProduct);
+  }
+
+  console.log("[TEST][CartModel] Товары после добавления:", cartModel.getItems());
+  console.log(
+    "[TEST][CartModel] Количество и сумма:",
+    cartModel.getTotalCount(),
+    cartModel.getTotalPrice()
+  );
+
+  if (firstProduct) {
+    console.log(
+      "[TEST][CartModel] Проверка наличия товара:",
+      cartModel.contains(firstProduct.id)
+    );
+    cartModel.removeItem(firstProduct.id);
+    console.log("[TEST][CartModel] После удаления товара:", cartModel.getItems());
+  }
+
+  cartModel.clear();
+  console.log("[TEST][CartModel] После очистки:", cartModel.getItems());
+
+  const buyerModel = new BuyerModel();
+  console.log("[TEST][BuyerModel] Начальное состояние:", buyerModel.getData());
+  console.log(
+    "[TEST][BuyerModel] Ошибки пустой формы:",
+    buyerModel.validate()
+  );
+
+  buyerModel.setData({ address: "Москва, ул. Пушкина, д. 1" });
+  console.log(
+    "[TEST][BuyerModel] После частичного заполнения:",
+    buyerModel.getData()
+  );
+  console.log(
+    "[TEST][BuyerModel] Ошибки после частичного заполнения:",
+    buyerModel.validate()
+  );
+
+  buyerModel.setData({
+    payment: "card",
+    email: "user@example.com",
+    phone: "+79990000000",
+  });
+  console.log("[TEST][BuyerModel] Полные данные:", buyerModel.getData());
+  console.log(
+    "[TEST][BuyerModel] Ошибки после полного заполнения:",
+    buyerModel.validate()
+  );
+
+  buyerModel.clear();
+  console.log("[TEST][BuyerModel] После очистки:", buyerModel.getData());
+}
+
 class StoreApp {
   private readonly events = new EventEmitter();
   private readonly api = new Api(API_URL);
-  private readonly apiService = new ApiService(this.api, this.events);
-  private readonly products = new ProductsModel(this.events);
-  private readonly cart = new CartModel(this.events);
-  private readonly buyer = new BuyerModel(this.events);
+  private readonly apiService = new ApiService(this.api);
+  private readonly products = new ProductsModel();
+  private readonly cart = new CartModel();
+  private readonly buyer = new BuyerModel();
 
   private readonly header = new Header(
     this.events,
@@ -86,26 +180,25 @@ class StoreApp {
   }
 
   private bindEvents(): void {
-    this.events.on("catalog:changed", () => this.renderCatalog());
     this.events.on("card:select", (payload: ProductIdPayload) =>
       this.openProductPreview(payload.id)
     );
     this.events.on("product:buy", (payload: ProductIdPayload) =>
       this.toggleProductInCart(payload.id)
     );
-    this.events.on("product:remove", (payload: ProductIdPayload) =>
-      this.cart.removeItem(payload.id)
-    );
-    this.events.on("cart:changed", () => this.syncCartView());
+    this.events.on("product:remove", (payload: ProductIdPayload) => {
+      this.cart.removeItem(payload.id);
+      this.syncCartView();
+    });
     this.events.on("basket:open", () => this.openBasket());
     this.events.on("order:start", () => this.openOrderStep());
     this.events.on("order:submit", () => this.openContactsStep());
     this.events.on("contacts:submit", () => void this.submitOrder());
     this.events.on("success:close", () => this.modal.close());
-    this.events.on("form:input", (payload: FormInputPayload) =>
-      this.buyer.setData({ [payload.field]: payload.value })
-    );
-    this.events.on("customer:changed", () => this.syncForms());
+    this.events.on("form:input", (payload: FormInputPayload) => {
+      this.buyer.setData({ [payload.field]: payload.value });
+      this.syncForms();
+    });
   }
 
   private initializeViewState(): void {
@@ -117,8 +210,10 @@ class StoreApp {
 
   private async loadCatalog(): Promise<void> {
     try {
-      const response: IProductListResponse = await this.apiService.getProductList();
-      this.products.setItems(response.items);
+      const items = await this.apiService.getProductList();
+      this.products.setItems(items);
+      console.log("[API] Каталог после сохранения в ProductsModel:", this.products.getItems());
+      this.renderCatalog();
     } catch (error) {
       console.error("Catalog loading failed", error);
     }
@@ -172,8 +267,8 @@ class StoreApp {
     preview.buttonText = unavailable
       ? "Недоступно"
       : inCart
-        ? "Убрать из корзины"
-        : "Добавить в корзину";
+        ? "Удалить из корзины"
+        : "Купить";
 
     return preview;
   }
@@ -190,6 +285,7 @@ class StoreApp {
       this.cart.addItem(product);
     }
 
+    this.syncCartView();
     this.modal.close();
   }
 
@@ -257,12 +353,23 @@ class StoreApp {
   }
 
   private async submitOrder(): Promise<void> {
+    const errors = this.buyer.validate();
+    if (Object.keys(errors).length > 0) {
+      this.syncForms();
+      return;
+    }
+
     const data = this.buyer.getData();
+    if (!this.isBuyerDataComplete(data)) {
+      this.syncForms();
+      return;
+    }
+
     const payload: IOrderData = {
-      payment: data.payment as TPayment,
-      email: data.email as string,
-      phone: data.phone as string,
-      address: data.address as string,
+      payment: data.payment,
+      email: data.email,
+      phone: data.phone,
+      address: data.address,
       total: this.cart.getTotalPrice(),
       items: this.cart.getItems().map((item) => item.id),
     };
@@ -281,7 +388,19 @@ class StoreApp {
     this.modal.content = this.successScreen.render();
     this.cart.clear();
     this.buyer.clear();
+    this.syncCartView();
+    this.syncForms();
+  }
+
+  private isBuyerDataComplete(data: Partial<IBuyer>): data is IBuyer {
+    return Boolean(
+      data.payment &&
+        data.address?.trim() &&
+        data.email?.trim() &&
+        data.phone?.trim()
+    );
   }
 }
 
+runModelsTests();
 new StoreApp().init();

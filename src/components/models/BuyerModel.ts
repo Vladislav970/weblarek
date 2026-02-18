@@ -1,5 +1,4 @@
 ﻿import { IBuyer, ValidationErrors } from "../../types";
-import { IEvents } from "../base/Events";
 
 const ERROR_TEXT = {
   payment: "Выберите способ оплаты",
@@ -11,13 +10,12 @@ const ERROR_TEXT = {
 export class BuyerModel {
   private state: Partial<IBuyer>;
 
-  constructor(private readonly events: IEvents, initial: Partial<IBuyer> = {}) {
+  constructor(initial: Partial<IBuyer> = {}) {
     this.state = { ...initial };
   }
 
   setData(data: Partial<IBuyer>): void {
     this.state = { ...this.state, ...data };
-    this.events.emit("customer:changed");
   }
 
   getData(): Partial<IBuyer> {
@@ -48,6 +46,5 @@ export class BuyerModel {
 
   clear(): void {
     this.state = {};
-    this.events.emit("customer:changed");
   }
 }

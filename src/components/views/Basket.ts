@@ -27,6 +27,14 @@ export class Basket extends Component<IBasketData> {
   }
 
   set items(value: HTMLElement[]) {
+    if (value.length === 0) {
+      const emptyState = document.createElement("li");
+      emptyState.className = "basket__empty";
+      emptyState.textContent = "Корзина пуста";
+      this.listNode.replaceChildren(emptyState);
+      return;
+    }
+
     this.listNode.replaceChildren(...value);
   }
 

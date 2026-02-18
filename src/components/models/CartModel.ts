@@ -1,17 +1,18 @@
 ﻿import { IProduct } from "../../types";
-import { IEvents } from "../base/Events";
 
 export class CartModel {
-  private items = new Map<string, IProduct>();
+  private items: IProduct[] = [];
 
-  constructor(private readonly events: IEvents) {}
+  constructor(initial: IProduct[] = []) {
+    this.items = initial.map((item) => ({ ...item }));
+  }
 
   getItems(): IProduct[] {
-    return Array.from(this.items.values()).map((item) => ({ ...item }));
+    return this.items.map((item) => ({ ...item }));
   }
 
   contains(productId: string): boolean {
-    return this.items.has(productId);
+    return this.items.some((item) => item.id === productId);
   }
 
   addItem(product: IProduct): void {
@@ -19,32 +20,27 @@ export class CartModel {
       throw new Error("CartModel.addItem expects product with id");
     }
 
-    if (product.price === null || this.items.has(product.id)) {
+    if (product.price === null || this.contains(product.id)) {
       return;
     }
 
-    this.items.set(product.id, { ...product });
-    this.events.emit("cart:changed");
+    this.items.push({ ...product });
   }
 
   removeItem(productId: string): void {
-    const deleted = this.items.delete(productId);
-    if (deleted) {
-      this.events.emit("cart:changed");
-    }
+    this.items = this.items.filter((item) => item.id !== productId);
   }
 
   clear(): void {
-    if (this.items.size === 0) {
+    if (this.items.length === 0) {
       return;
     }
 
-    this.items.clear();
-    this.events.emit("cart:changed");
+    this.items = [];
   }
 
   getTotalCount(): number {
-    return this.items.size;
+    return this.items.length;
   }
 
   getTotalPrice(): number {
