@@ -1,34 +1,26 @@
-﻿import { Component } from "../base/Component";
-import { ensureElement } from "../../utils/utils";
-
-export interface ICardActions {
-  onClick?: (event: MouseEvent) => void;
-}
+﻿import { ensureElement } from "../../utils/utils";
+import { Component } from "../base/Component";
 
 export class Card<TState> extends Component<TState> {
-  protected titleNode: HTMLElement;
-  protected priceNode: HTMLElement;
-  protected actionButton?: HTMLButtonElement;
+  protected readonly titleNode: HTMLElement;
+  protected readonly priceNode: HTMLElement;
+  protected readonly actionButton?: HTMLButtonElement;
 
-  constructor(container: HTMLElement, actions?: ICardActions) {
+  constructor(container: HTMLElement) {
     super(container);
 
     this.titleNode = ensureElement<HTMLElement>(".card__title", this.container);
     this.priceNode = ensureElement<HTMLElement>(".card__price", this.container);
     this.actionButton =
       this.container.querySelector<HTMLButtonElement>("button") ?? undefined;
+  }
 
-    if (actions?.onClick) {
-      (this.actionButton ?? this.container).addEventListener("click", actions.onClick);
-    }
+  set id(value: string) {
+    this.container.dataset.id = value;
   }
 
   set title(value: string) {
     this.setText(this.titleNode, value);
-  }
-
-  get title(): string {
-    return this.titleNode.textContent ?? "";
   }
 
   set price(value: number | null) {

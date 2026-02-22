@@ -9,4 +9,5 @@ export { Gallery } from "./Gallery";
 export { Header } from "./header";
 export { Modal } from "./Modal";
 export { OrderForm } from "./OrderForm";
+export { Page } from "./Page";
 export { Success } from "./Success";

@@ -1,21 +1,19 @@
 ﻿import { ensureElement } from "../../utils/utils";
+import { IEvents } from "../base/Events";
 import { Card } from "./Card";
 
 interface ICardBasketData {
+  id: string;
   title: string;
   price: number | null;
   index: number;
-}
-
-interface ICardBasketActions {
-  onDelete?: (event: MouseEvent) => void;
 }
 
 export class CardBasket extends Card<ICardBasketData> {
   private readonly indexNode: HTMLElement;
   private readonly deleteButton: HTMLButtonElement;
 
-  constructor(container: HTMLElement, actions?: ICardBasketActions) {
+  constructor(private readonly events: IEvents, container: HTMLElement) {
     super(container);
 
     this.indexNode = ensureElement<HTMLElement>(".basket__item-index", this.container);
@@ -24,9 +22,12 @@ export class CardBasket extends Card<ICardBasketData> {
       this.container
     );
 
-    if (actions?.onDelete) {
-      this.deleteButton.addEventListener("click", actions.onDelete);
-    }
+    this.deleteButton.addEventListener("click", () => {
+      const id = this.container.dataset.id;
+      if (id) {
+        this.events.emit("basket:item:remove", { id });
+      }
+    });
   }
 
   set index(value: number) {

@@ -1,6 +1,7 @@
 ﻿import { CDN_URL, categoryMap } from "../../utils/constants";
 import { ensureElement } from "../../utils/utils";
-import { Card, ICardActions } from "./Card";
+import { IEvents } from "../base/Events";
+import { Card } from "./Card";
 
 interface ICardPreviewData {
   id: string;
@@ -9,6 +10,8 @@ interface ICardPreviewData {
   title: string;
   description: string;
   price: number | null;
+  buttonText: string;
+  disabled: boolean;
 }
 
 export class CardPreview extends Card<ICardPreviewData> {
@@ -17,21 +20,24 @@ export class CardPreview extends Card<ICardPreviewData> {
   private readonly descriptionNode: HTMLElement;
   private readonly buyButton: HTMLButtonElement;
 
-  constructor(container: HTMLElement, actions?: ICardActions) {
-    super(container, actions);
+  constructor(private readonly events: IEvents, container: HTMLElement) {
+    super(container);
 
     this.imageNode = ensureElement<HTMLImageElement>(".card__image", this.container);
     this.categoryNode = ensureElement<HTMLElement>(".card__category", this.container);
     this.descriptionNode = ensureElement<HTMLElement>(".card__text", this.container);
     this.buyButton = ensureElement<HTMLButtonElement>(".card__button", this.container);
-  }
 
-  set id(value: string) {
-    this.container.dataset.id = value;
+    this.buyButton.addEventListener("click", () => {
+      const id = this.container.dataset.id;
+      if (id) {
+        this.events.emit("card:toggle", { id });
+      }
+    });
   }
 
   set image(path: string) {
-    this.setImage(this.imageNode, `${CDN_URL}${path}`, this.title);
+    this.setImage(this.imageNode, `${CDN_URL}${path}`, this.titleNode.textContent ?? "");
   }
 
   set category(value: string) {

@@ -23,7 +23,7 @@ export class Basket extends Component<IBasketData> {
       this.container
     );
 
-    this.orderButton.addEventListener("click", () => this.events.emit("order:start"));
+    this.orderButton.addEventListener("click", () => this.events.emit("basket:order"));
   }
 
   set items(value: HTMLElement[]) {

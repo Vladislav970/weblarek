@@ -1,11 +1,14 @@
 ﻿import { IProduct } from "../../types";
+import { EventEmitter, IEvents } from "../base/Events";
 
 export class ProductsModel {
   private catalog: IProduct[] = [];
   private selectedId: string | null = null;
+  private readonly events: IEvents;
 
-  constructor(initial: IProduct[] = []) {
+  constructor(initial: IProduct[] = [], events: IEvents = new EventEmitter()) {
     this.catalog = [...initial];
+    this.events = events;
   }
 
   setItems(items: IProduct[]): void {
@@ -15,6 +18,7 @@ export class ProductsModel {
 
     this.catalog = items.map((item) => ({ ...item }));
     this.selectedId = null;
+    this.events.emit("products:changed");
   }
 
   getItems(): IProduct[] {
@@ -32,6 +36,7 @@ export class ProductsModel {
 
   setSelectedItem(product: IProduct | null): void {
     this.selectedId = product?.id ?? null;
+    this.events.emit("product:selected");
   }
 
   getSelectedItem(): IProduct | undefined {

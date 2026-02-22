@@ -2,7 +2,18 @@
 import { Component } from "../base/Component";
 import { IEvents } from "../base/Events";
 
-export abstract class Form<TState> extends Component<TState> {
+interface IFormInputPayload {
+  field: string;
+  value: string;
+  form: string;
+}
+
+interface IFormData {
+  valid: boolean;
+  errors: string[];
+}
+
+export abstract class Form<TState extends object> extends Component<TState & IFormData> {
   protected readonly submitButton: HTMLButtonElement;
   protected readonly errorsNode: HTMLElement;
 
@@ -31,11 +42,12 @@ export abstract class Form<TState> extends Component<TState> {
         return;
       }
 
-      this.events.emit("form:input", {
+      const payload: IFormInputPayload = {
         field: target.name,
         value: target.value,
         form: formName,
-      });
+      };
+      this.events.emit("form:input", payload);
     });
   }
 

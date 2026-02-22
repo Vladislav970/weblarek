@@ -5,6 +5,8 @@ import { Form } from "./Form";
 interface IOrderFormData {
   payment: string;
   address: string;
+  valid: boolean;
+  errors: string[];
 }
 
 export class OrderForm extends Form<IOrderFormData> {
@@ -27,6 +29,7 @@ export class OrderForm extends Form<IOrderFormData> {
         this.events.emit("form:input", {
           field: "payment",
           value: button.name,
+          form: "order",
         });
       });
     });
