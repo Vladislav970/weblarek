@@ -11,7 +11,7 @@ export class CartModel {
   }
 
   getItems(): IProduct[] {
-    return this.items.map((item) => ({ ...item }));
+    return this.items;
   }
 
   contains(productId: string): boolean {
@@ -20,7 +20,7 @@ export class CartModel {
 
   addItem(product: IProduct): void {
     if (!product?.id) {
-      throw new Error("CartModel.addItem expects product with id");
+      return;
     }
 
     if (product.price === null || this.contains(product.id)) {

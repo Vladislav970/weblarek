@@ -19,13 +19,9 @@ import {
   Page,
   Success,
 } from "./components/views";
-import { IOrderData, TPayment, ValidationErrors } from "./types";
+import { IOrderData, IProduct, TPayment, ValidationErrors } from "./types";
 import { API_URL } from "./utils/constants";
 import { cloneTemplate, createElement, ensureElement } from "./utils/utils";
-
-interface ICardPayload {
-  id: string;
-}
 
 interface IFormInputPayload {
   field: string;
@@ -80,9 +76,14 @@ function updateHeaderCounter(): void {
 
 function renderCatalog(): void {
   const productCards = productsModel.getItems().map((product) => {
-    const productCard = new CardCatalog(events, cloneTemplate<HTMLElement>("#card-catalog"));
+    const productCard = new CardCatalog(
+      cloneTemplate<HTMLElement>("#card-catalog"),
+      {
+        onSelect: () => events.emit("card:select", product),
+      }
+    );
+
     return productCard.render({
-      id: product.id,
       title: product.title,
       image: product.image,
       category: product.category,
@@ -96,9 +97,14 @@ function renderCatalog(): void {
 function renderBasketItems(): void {
   const items = cartModel.getItems();
   const basketCards = items.map((item, index) => {
-    const basketCard = new CardBasket(events, cloneTemplate<HTMLElement>("#card-basket"));
+    const basketCard = new CardBasket(
+      cloneTemplate<HTMLElement>("#card-basket"),
+      {
+        onDelete: () => events.emit("basket:item:remove", item.id),
+      }
+    );
+
     return basketCard.render({
-      id: item.id,
       title: item.title,
       price: item.price,
       index: index + 1,
@@ -129,9 +135,14 @@ function openSelectedProductModal(): void {
   const inCart = cartModel.contains(selectedProduct.id);
   const isUnavailable = selectedProduct.price === null;
 
-  const previewCard = new CardPreview(events, cloneTemplate<HTMLElement>("#card-preview"));
+  const previewCard = new CardPreview(
+    cloneTemplate<HTMLElement>("#card-preview"),
+    {
+      onToggle: () => events.emit("card:toggle"),
+    }
+  );
+
   previewCard.render({
-    id: selectedProduct.id,
     title: selectedProduct.title,
     image: selectedProduct.image,
     category: selectedProduct.category,
@@ -247,15 +258,12 @@ events.on("buyer:changed", () => {
   }
 });
 
-events.on<ICardPayload>("card:select", ({ id }) => {
-  const product = productsModel.getProductById(id);
-  if (product) {
-    productsModel.setSelectedItem(product);
-  }
+events.on<IProduct>("card:select", (product) => {
+  productsModel.setSelectedItem(product);
 });
 
-events.on<ICardPayload>("card:toggle", ({ id }) => {
-  const product = productsModel.getProductById(id);
+events.on("card:toggle", () => {
+  const product = productsModel.getSelectedItem();
 
   if (!product || product.price === null) {
     return;
@@ -263,14 +271,16 @@ events.on<ICardPayload>("card:toggle", ({ id }) => {
 
   modal.close();
 
-  if (cartModel.contains(id)) {
-    cartModel.removeItem(id);
+  if (cartModel.contains(product.id)) {
+    cartModel.removeItem(product.id);
   } else {
     cartModel.addItem(product);
   }
+
+  productsModel.setSelectedItem(null);
 });
 
-events.on<ICardPayload>("basket:item:remove", ({ id }) => {
+events.on<string>("basket:item:remove", (id) => {
   cartModel.removeItem(id);
 });
 
@@ -287,39 +297,15 @@ events.on("basket:order", () => {
 events.on<IFormInputPayload>("form:input", handleFormInput);
 
 events.on("order:submit", () => {
-  const errors = buyerModel.validate();
-
-  if (!isOrderStepValid(errors)) {
-    syncOrderForm();
-    return;
-  }
-
   openContactsModal();
 });
 
 events.on("contacts:submit", async () => {
   const buyerData = buyerModel.getData();
-  const errors = buyerModel.validate();
-
-  if (!isContactsStepValid(errors)) {
-    syncContactsForm();
-    return;
-  }
-
-  if (!buyerData.payment || !buyerData.address || !buyerData.email || !buyerData.phone) {
-    syncContactsForm();
-    return;
-  }
-
   const cartItems = cartModel.getItems().map((item) => item.id);
 
-  if (cartItems.length === 0) {
-    openBasketModal();
-    return;
-  }
-
   const orderData: IOrderData = {
-    payment: buyerData.payment,
+    payment: buyerData.payment as TPayment,
     address: buyerData.address,
     email: buyerData.email,
     phone: buyerData.phone,
@@ -348,12 +334,6 @@ events.on("modal:opened", () => {
 
 events.on("modal:closed", () => {
   page.render({ locked: false });
-  const shouldResetSelected = modalScreen === "preview";
-  modalScreen = null;
-
-  if (shouldResetSelected) {
-    productsModel.setSelectedItem(null);
-  }
 });
 
 updateHeaderCounter();

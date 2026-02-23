@@ -3,7 +3,7 @@ import { EventEmitter, IEvents } from "../base/Events";
 
 export class ProductsModel {
   private catalog: IProduct[] = [];
-  private selectedId: string | null = null;
+  private selectedItem: IProduct | null = null;
   private readonly events: IEvents;
 
   constructor(initial: IProduct[] = [], events: IEvents = new EventEmitter()) {
@@ -13,11 +13,11 @@ export class ProductsModel {
 
   setItems(items: IProduct[]): void {
     if (!Array.isArray(items)) {
-      throw new Error("ProductsModel.setItems expects an array");
+      return;
     }
 
     this.catalog = items.map((item) => ({ ...item }));
-    this.selectedId = null;
+    this.selectedItem = null;
     this.events.emit("products:changed");
   }
 
@@ -35,15 +35,15 @@ export class ProductsModel {
   }
 
   setSelectedItem(product: IProduct | null): void {
-    this.selectedId = product?.id ?? null;
+    this.selectedItem = product ? { ...product } : null;
     this.events.emit("product:selected");
   }
 
   getSelectedItem(): IProduct | undefined {
-    if (!this.selectedId) {
+    if (!this.selectedItem) {
       return undefined;
     }
 
-    return this.getProductById(this.selectedId);
+    return { ...this.selectedItem };
   }
 }

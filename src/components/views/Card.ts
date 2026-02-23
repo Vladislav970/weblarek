@@ -15,10 +15,6 @@ export class Card<TState> extends Component<TState> {
       this.container.querySelector<HTMLButtonElement>("button") ?? undefined;
   }
 
-  set id(value: string) {
-    this.container.dataset.id = value;
-  }
-
   set title(value: string) {
     this.setText(this.titleNode, value);
   }

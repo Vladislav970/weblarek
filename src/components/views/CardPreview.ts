@@ -1,10 +1,8 @@
-﻿import { CDN_URL, categoryMap } from "../../utils/constants";
+import { CDN_URL, categoryMap } from "../../utils/constants";
 import { ensureElement } from "../../utils/utils";
-import { IEvents } from "../base/Events";
 import { Card } from "./Card";
 
 interface ICardPreviewData {
-  id: string;
   image: string;
   category: string;
   title: string;
@@ -14,13 +12,17 @@ interface ICardPreviewData {
   disabled: boolean;
 }
 
+interface ICardPreviewActions {
+  onToggle: () => void;
+}
+
 export class CardPreview extends Card<ICardPreviewData> {
   private readonly imageNode: HTMLImageElement;
   private readonly categoryNode: HTMLElement;
   private readonly descriptionNode: HTMLElement;
   private readonly buyButton: HTMLButtonElement;
 
-  constructor(private readonly events: IEvents, container: HTMLElement) {
+  constructor(container: HTMLElement, actions: ICardPreviewActions) {
     super(container);
 
     this.imageNode = ensureElement<HTMLImageElement>(".card__image", this.container);
@@ -28,12 +30,7 @@ export class CardPreview extends Card<ICardPreviewData> {
     this.descriptionNode = ensureElement<HTMLElement>(".card__text", this.container);
     this.buyButton = ensureElement<HTMLButtonElement>(".card__button", this.container);
 
-    this.buyButton.addEventListener("click", () => {
-      const id = this.container.dataset.id;
-      if (id) {
-        this.events.emit("card:toggle", { id });
-      }
-    });
+    this.buyButton.addEventListener("click", actions.onToggle);
   }
 
   set image(path: string) {

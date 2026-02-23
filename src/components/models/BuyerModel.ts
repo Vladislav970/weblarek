@@ -8,12 +8,19 @@ const ERROR_TEXT = {
   email: "Укажите email",
 } as const;
 
+const INITIAL_STATE: IBuyer = {
+  payment: "" as IBuyer["payment"],
+  address: "",
+  phone: "",
+  email: "",
+};
+
 export class BuyerModel {
-  private state: Partial<IBuyer>;
+  private state: IBuyer = { ...INITIAL_STATE };
   private readonly events: IEvents;
 
   constructor(initial: Partial<IBuyer> = {}, events: IEvents = new EventEmitter()) {
-    this.state = { ...initial };
+    this.state = { ...INITIAL_STATE, ...initial };
     this.events = events;
   }
 
@@ -22,7 +29,7 @@ export class BuyerModel {
     this.events.emit("buyer:changed");
   }
 
-  getData(): Partial<IBuyer> {
+  getData(): IBuyer {
     return { ...this.state };
   }
 
@@ -49,11 +56,17 @@ export class BuyerModel {
   }
 
   clear(): void {
-    if (Object.keys(this.state).length === 0) {
+    const isInitialState =
+      this.state.payment === INITIAL_STATE.payment &&
+      this.state.address === INITIAL_STATE.address &&
+      this.state.phone === INITIAL_STATE.phone &&
+      this.state.email === INITIAL_STATE.email;
+
+    if (isInitialState) {
       return;
     }
 
-    this.state = {};
+    this.state = { ...INITIAL_STATE };
     this.events.emit("buyer:changed");
   }
 }
