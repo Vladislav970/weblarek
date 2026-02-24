@@ -47,6 +47,9 @@ const basket = new Basket(events, cloneTemplate<HTMLElement>("#basket"));
 const orderForm = new OrderForm(events, cloneTemplate<HTMLElement>("#order"));
 const contactsForm = new ContactsForm(events, cloneTemplate<HTMLElement>("#contacts"));
 const success = new Success(events, cloneTemplate<HTMLElement>("#success"));
+const previewCard = new CardPreview(cloneTemplate<HTMLElement>("#card-preview"), {
+  onToggle: () => events.emit("card:toggle"),
+});
 
 let modalScreen: TModalScreen = null;
 
@@ -135,24 +138,17 @@ function openSelectedProductModal(): void {
   const inCart = cartModel.contains(selectedProduct.id);
   const isUnavailable = selectedProduct.price === null;
 
-  const previewCard = new CardPreview(
-    cloneTemplate<HTMLElement>("#card-preview"),
-    {
-      onToggle: () => events.emit("card:toggle"),
-    }
-  );
-
-  previewCard.render({
-    title: selectedProduct.title,
-    image: selectedProduct.image,
-    category: selectedProduct.category,
-    description: selectedProduct.description,
-    price: selectedProduct.price,
-    buttonText: isUnavailable ? "Недоступно" : inCart ? "Удалить из корзины" : "Купить",
-    disabled: isUnavailable,
+  modal.render({
+    content: previewCard.render({
+      title: selectedProduct.title,
+      image: selectedProduct.image,
+      category: selectedProduct.category,
+      description: selectedProduct.description,
+      price: selectedProduct.price,
+      buttonText: isUnavailable ? "Недоступно" : inCart ? "Удалить из корзины" : "Купить",
+      disabled: isUnavailable,
+    }),
   });
-
-  modal.render({ content: previewCard.render() });
   modal.open();
   modalScreen = "preview";
 }
@@ -238,14 +234,7 @@ events.on("product:selected", () => {
 
 events.on("cart:changed", () => {
   updateHeaderCounter();
-
-  if (modalScreen === "basket") {
-    renderBasketItems();
-  }
-
-  if (modalScreen === "preview") {
-    openSelectedProductModal();
-  }
+  renderBasketItems();
 });
 
 events.on("buyer:changed", () => {
